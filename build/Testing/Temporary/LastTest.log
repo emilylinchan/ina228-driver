@@ -1,0 +1,22 @@
+Start testing: Jul 16 23:27 Eastern Daylight Time
+----------------------------------------------------------
+1/1 Testing: test_ina228
+1/1 Test: test_ina228
+Command: "C:/Users/emily/GitRepos/ina228_driver/build/test_ina228.exe"
+Directory: C:/Users/emily/GitRepos/ina228_driver/build
+"test_ina228" start time: Jul 16 23:27 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+INA228 driver unit tests (mock I2C)
+-----------------------------------
+-----------------------------------
+32 assertions, 0 failed
+<end of output>
+Test time =   0.19 sec
+----------------------------------------------------------
+Test Passed.
+"test_ina228" end time: Jul 16 23:27 Eastern Daylight Time
+"test_ina228" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jul 16 23:27 Eastern Daylight Time

@@ -1,5 +1,0 @@
-C:/Users/emily/GitRepos/ina228_driver/build/CMakeFiles/ina228.dir
-C:/Users/emily/GitRepos/ina228_driver/build/CMakeFiles/test_ina228.dir
-C:/Users/emily/GitRepos/ina228_driver/build/CMakeFiles/test.dir
-C:/Users/emily/GitRepos/ina228_driver/build/CMakeFiles/edit_cache.dir
-C:/Users/emily/GitRepos/ina228_driver/build/CMakeFiles/rebuild_cache.dir

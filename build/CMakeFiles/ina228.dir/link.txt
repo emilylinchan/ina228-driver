@@ -1,2 +1,0 @@
-C:\msys64\ucrt64\bin\ar.exe qc libina228.a CMakeFiles/ina228.dir/src/ina228.c.obj
-C:\msys64\ucrt64\bin\ranlib.exe libina228.a

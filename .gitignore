@@ -11,3 +11,9 @@
 # Editor / OS cruft
 .vscode/
 .DS_Store
+
+# STM32 project
+Debug/
+Drivers/
+.settings/
+*.launch

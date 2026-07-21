@@ -21,6 +21,9 @@ Typical contexts:
 | `tests/`    | Host-side unit tests (mock I2C bus) |
 | `examples/` | Platform port examples              |
 
+See [examples/stm32](examples/stm32) for a full STM32 port that streams
+live sensor data over UART, including a [live demo video](https://www.youtube.com/watch?v=eXcZ65j4AdI)
+of the implementation running on real hardware.
 
 ## Requirements
 

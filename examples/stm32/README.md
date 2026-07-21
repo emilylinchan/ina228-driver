@@ -5,7 +5,7 @@ INA228 driver on an STM32F446RE (Nucleo-F446RE). The firmware streams
 timestamped voltage, current, and power samples over UART; a companion
 Python script (`data_log.py`) receives them and plots live.
 
-Watch a [LIVE DEMO](https://www.youtube.com/watch?v=eXcZ65j4AdI).
+🎬 **[Watch the video demo](https://www.youtube.com/watch?v=eXcZ65j4AdI)**
 
 ## Hardware
 

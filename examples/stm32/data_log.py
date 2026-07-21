@@ -1,5 +1,5 @@
 """
-data_stream.py
+data_log.py
 
 UART data streamer for STM32 INA228 sensor measurements.
 Sends a START command to the MCU over a serial connection, receives

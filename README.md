@@ -2,7 +2,6 @@
 
 Platform-independent C99 driver for the TI INA228 — an 85 V, 20-bit
 power/energy/charge monitor with an I2C interface.
-[(DATASHEET)](https://www.ti.com/lit/ds/symlink/ina228.pdf)
 
 Portability comes from using a generic `void *ctx` pointer, which represents the platform-specific context used to access the I²C peripheral. The driver never interprets `ctx` directly—it simply passes it to the platform-specific I²C read/write functions.
 
@@ -12,18 +11,16 @@ Typical contexts:
 - **Linux:** an I2C file descriptor (usually wrapped in a small struct)
 - **ESP-IDF:** `i2c_master_bus_handle_t`
 
-## Layout
+## Repository Structure
 
-| Path        | Contents                            |
-|-------------|-------------------------------------|
-| `inc/`      | Public header (`ina228.h`)          |
-| `src/`      | Driver implementation (`ina228.c`)  |
-| `tests/`    | Host-side unit tests (mock I2C bus) |
-| `examples/` | Platform port examples              |
+| Path | Description |
+| --- | --- |
+| [`inc/`](inc) | Public header (`ina228.h`) |
+| [`src/`](src) | Driver implementation (`ina228.c`) |
+| [`tests/`](tests) | Host-side unit tests (mock I2C bus) |
+| [`examples/`](examples) | Platform port examples (see [stm32](examples/stm32)) |
 
-See [examples/stm32](examples/stm32) for a full STM32 port that streams
-live sensor data over UART, including a **[video demo](https://www.youtube.com/watch?v=eXcZ65j4AdI)**
-of the implementation running on real hardware.
+> 🎬 **[Watch the video demo](https://www.youtube.com/watch?v=eXcZ65j4AdI)** with the implementation running on real hardware!
 
 ## Requirements
 
@@ -86,9 +83,7 @@ ina228_read_current(&dev, &current);
 ina228_read_power(&dev, &power);
 ```
 
-See [inc/ina228.h](inc/ina228.h) for the full API.
-
-**NOTE**: The public header is wrapped in `extern "C"`, so it can be included directly
+> **NOTE**: The public header is wrapped in `extern "C"`, so it can be included directly
 from C++ sources.
 
 ## License

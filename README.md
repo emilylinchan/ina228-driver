@@ -90,3 +90,7 @@ See [inc/ina228.h](inc/ina228.h) for the full API.
 
 **NOTE**: The public header is wrapped in `extern "C"`, so it can be included directly
 from C++ sources.
+
+## License
+
+[MIT](LICENSE) © 2026 Emily Chan

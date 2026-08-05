@@ -10,7 +10,9 @@ Line format from the MCU: <ms_since_start>,<voltage>,<current>,<power>
 
 """
 
+import argparse
 import serial
+from serial.tools import list_ports
 import time
 import matplotlib.pyplot as plt
 
@@ -18,160 +20,198 @@ import matplotlib.pyplot as plt
 # Configuration
 # ======================================================================
 
-SERIAL_PORT = "COM9" 
+SERIAL_PORT = "COM10"
 BAUD_RATE   = 115200
 TIMEOUT_S   = 2
 
 REDRAW_INTERVAL_S = 0.05  # redraw plot at most every 50 ms (~20 FPS)
 
-ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=TIMEOUT_S)
-time.sleep(2)  # allow Nucleo reset
 
-# ======================================================================
-# User Input
-# ======================================================================
+def parse_args():
+    """Parse command-line arguments for the serial port, baud rate, and port listing."""
+    parser = argparse.ArgumentParser(
+        description="Stream and plot INA228 measurements from an STM32 over UART."
+    )
+    parser.add_argument(
+        "-p", "--port", default=SERIAL_PORT,
+        help=f"Serial port to connect to (default: {SERIAL_PORT})",
+    )
+    parser.add_argument(
+        "-b", "--baud", type=int, default=BAUD_RATE,
+        help=f"Baud rate (default: {BAUD_RATE})",
+    )
+    parser.add_argument(
+        "-l", "--list", action="store_true",
+        help="List available serial ports and exit",
+    )
+    return parser.parse_args()
 
-total_time = int(input("Enter total time (seconds): "))
 
-command = f"START,{total_time}\n"
-print("Sending:", command.strip())
+def main():
+    """Connect to the MCU, stream INA228 samples, and plot them live until sampling completes."""
+    
+    # ======================================================================
+    # User Input
+    # ======================================================================
+    
+    args = parse_args()
 
-ser.write(command.encode("ascii"))
-
-# ======================================================================
-# Wait for MCU Acknowledgment
-# ======================================================================
-
-response = ser.readline().decode("ascii", errors="ignore").strip()
-print("MCU response:", response)
-
-if response != "OK":
-    print("MCU did not acknowledge command.")
-    ser.close()
-    exit(1)
-
-# ======================================================================
-# Set Up Live Plot
-# ======================================================================
-
-plt.style.use("seaborn-v0_8")
-plt.ion()  # interactive mode: plot window stays live while script runs
-
-# Three stacked panels sharing the time axis, each with its own y-scale
-fig, (ax_v, ax_i, ax_p) = plt.subplots(3, 1, figsize=(10, 7), sharex=True)
-
-line_v, = ax_v.plot([], [], color="tab:blue",   label="Voltage (V)")
-line_i, = ax_i.plot([], [], color="tab:orange", label="Current (A)")
-line_p, = ax_p.plot([], [], color="tab:green",  label="Power (W)")
-
-ax_v.set_ylabel("Voltage (V)")
-ax_i.set_ylabel("Current (A)")
-ax_p.set_ylabel("Power (W)")
-ax_p.set_xlabel("Time (s)")
-
-ax_v.set_title("Voltage, Current, and Power vs Time")
-
-for a in (ax_v, ax_i, ax_p):
-    a.set_xlim(0, total_time)
-    a.grid(True)
-    a.legend(loc="upper right")
-
-fig.tight_layout()
-fig.show()
-
-times    = []   # seconds since start (from MCU timestamp)
-voltages = []
-currents = []
-powers   = []
-
-def update_plot():
-    """Push the accumulated data into the plots and redraw."""
-    if not times:
+    if args.list:
+        ports = list(list_ports.comports())
+        if not ports:
+            print("No serial ports found")
+        for port in ports:
+            print(f"{port.device:<20} {port.description}")
         return
-    line_v.set_data(times, voltages)
-    line_i.set_data(times, currents)
-    line_p.set_data(times, powers)
-    xmax = max(total_time, times[-1]) # extend x-axis to keep last few overrun samples
+
+    ser = serial.Serial(args.port, args.baud, timeout=TIMEOUT_S)
+    time.sleep(2)  # allow Nucleo reset
+
+    total_time = int(input("Enter total time (seconds): "))
+
+    command = f"START,{total_time}\n"
+    print("Sending:", command.strip())
+
+    ser.write(command.encode("ascii"))
+
+    # ======================================================================
+    # Wait for MCU Acknowledgment
+    # ======================================================================
+
+    response = ser.readline().decode("ascii", errors="ignore").strip()
+    print("MCU response:", response)
+
+    if response != "OK":
+        print("MCU did not acknowledge command.")
+        ser.close()
+        exit(1)
+
+    # ======================================================================
+    # Set Up Live Plot
+    # ======================================================================
+
+    plt.style.use("seaborn-v0_8")
+    plt.ion()  # interactive mode: plot window stays live while script runs
+
+    # Three stacked panels sharing the time axis, each with its own y-scale
+    fig, (ax_v, ax_i, ax_p) = plt.subplots(3, 1, figsize=(10, 7), sharex=True)
+
+    line_v, = ax_v.plot([], [], color="tab:blue",   label="Voltage (V)")
+    line_i, = ax_i.plot([], [], color="tab:orange", label="Current (A)")
+    line_p, = ax_p.plot([], [], color="tab:green",  label="Power (W)")
+
+    ax_v.set_ylabel("Voltage (V)")
+    ax_i.set_ylabel("Current (A)")
+    ax_p.set_ylabel("Power (W)")
+    ax_p.set_xlabel("Time (s)")
+
+    ax_v.set_title("Voltage, Current, and Power vs Time")
+
     for a in (ax_v, ax_i, ax_p):
-        a.set_xlim(0, xmax)
-        a.relim()
-        a.autoscale_view(scalex=False, scaley=True)  # each panel scales independently
-    fig.canvas.draw_idle()
-    fig.canvas.flush_events()
+        a.set_xlim(0, total_time)
+        a.grid(True)
+        a.legend(loc="upper right")
 
-# ======================================================================
-# Receive Samples and Plot in Real Time
-# ======================================================================
+    fig.tight_layout()
+    fig.show()
 
-print("Receiving samples...")
+    times    = []   # seconds since start (from MCU timestamp)
+    voltages = []
+    currents = []
+    powers   = []
 
-# Header for console output
-print("\n" + "="*60)
-print(f" {'Time (s)':<12} {'Voltage (V)':<15} {'Current (A)':<15} {'Power (W)':<15}")
-print("="*60)
-
-aborted = False
-last_redraw = time.monotonic()
-
-while True:
-    raw = ser.readline()
-    line = raw.decode("ascii", errors="ignore").strip()
-
-    if not line:
-        # Timeout with no data — keep the GUI responsive and try again
+    def update_plot():
+        """Push the accumulated data into the plots and redraw."""
+        if not times:
+            return
+        line_v.set_data(times, voltages)
+        line_i.set_data(times, currents)
+        line_p.set_data(times, powers)
+        xmax = max(total_time, times[-1]) # extend x-axis to keep last few overrun samples
+        for a in (ax_v, ax_i, ax_p):
+            a.set_xlim(0, xmax)
+            a.relim()
+            a.autoscale_view(scalex=False, scaley=True)  # each panel scales independently
+        fig.canvas.draw_idle()
         fig.canvas.flush_events()
-        continue
 
-    # Sensor comm failure reported by MCU
-    if line == "FAULT_SENSOR_COMM":
-        print("\n  MCU reported sensor communication failure.")
-        aborted = True
-        break
+    # ======================================================================
+    # Receive Samples and Plot in Real Time
+    # ======================================================================
 
-    if line == "DONE":
-        print("Sampling complete.")
-        break
+    print("Receiving samples...")
 
-    try:
-        # Parse data
-        ts_ms, v, i, p = line.split(",")
-        t = float(ts_ms) / 1000.0   # ms -> s
-        times.append(t)
-        voltages.append(float(v))
-        currents.append(float(i))
-        powers.append(float(p))
+    # Header for console output
+    print("\n" + "="*60)
+    print(f" {'Time (s)':<12} {'Voltage (V)':<15} {'Current (A)':<15} {'Power (W)':<15}")
+    print("="*60)
 
-        print(f"{t:<12.4f} {float(v):<15.6f} {float(i):<15.6f} {float(p):<15.6f}")
+    aborted = False
+    last_redraw = time.monotonic()
 
-    except ValueError:
-        continue # ignore malformed lines
+    while True:
+        raw = ser.readline()
+        line = raw.decode("ascii", errors="ignore").strip()
 
-    # Throttled redraw so plotting can't fall behind the serial stream
-    now = time.monotonic()
-    if now - last_redraw >= REDRAW_INTERVAL_S:
-        update_plot()
-        last_redraw = now
+        if not line:
+            # Timeout with no data — keep the GUI responsive and try again
+            fig.canvas.flush_events()
+            continue
 
-ser.close()
+        # Sensor comm failure reported by MCU
+        if line == "FAULT_SENSOR_COMM":
+            print("\n  MCU reported sensor communication failure.")
+            aborted = True
+            break
 
-# ======================================================================
-# Final Plot + Summary
-# ======================================================================
+        if line == "DONE":
+            print("Sampling complete.")
+            break
 
-num_samples = len(times)
+        try:
+            # Parse data
+            ts_ms, v, i, p = line.split(",")
+            t = float(ts_ms) / 1000.0   # ms -> s
+            times.append(t)
+            voltages.append(float(v))
+            currents.append(float(i))
+            powers.append(float(p))
 
-if num_samples == 0:
-    print("No data received.")
-    exit(1)
+            print(f"{t:<12.4f} {float(v):<15.6f} {float(i):<15.6f} {float(p):<15.6f}")
 
-update_plot() # one last redraw so the plot includes every sample
+        except ValueError:
+            continue # ignore malformed lines
 
-print(f"\nReceived {num_samples} samples over {times[-1]:.3f} s.")
-if times[-1] > 0:
-    print(f"Achieved average sampling rate: {num_samples / times[-1]:.1f} Hz")
-if aborted:
-    print("Collection ended early due to MCU fault.")
-print("Close the plot window to exit.")
+        # Throttled redraw so plotting can't fall behind the serial stream
+        now = time.monotonic()
+        if now - last_redraw >= REDRAW_INTERVAL_S:
+            update_plot()
+            last_redraw = now
 
-plt.ioff()
-plt.show()  # blocks until the user closes the window
+    ser.close()
+
+    # ======================================================================
+    # Final Plot + Summary
+    # ======================================================================
+
+    num_samples = len(times)
+
+    if num_samples == 0:
+        print("No data received.")
+        exit(1)
+
+    update_plot() # one last redraw so the plot includes every sample
+
+    print(f"\nReceived {num_samples} samples over {times[-1]:.3f} s.")
+    if times[-1] > 0:
+        print(f"Achieved average sampling rate: {num_samples / times[-1]:.1f} Hz")
+    if aborted:
+        print("Collection ended early due to MCU fault.")
+    print("Close the plot window to exit.")
+
+    plt.ioff()
+    plt.show()  # blocks until the user closes the window
+
+
+if __name__ == "__main__":
+    main()

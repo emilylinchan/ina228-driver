@@ -68,12 +68,29 @@ health check it sends `FAULT_SENSOR_COMM\n` and stops.
 
 ```bash
 pip install pyserial matplotlib
-python data_log.py
+python data_log.py --port COM10
 ```
 
-Edit `SERIAL_PORT` at the top of `data_log.py` to match your board's COM
-port, then run it and enter a capture duration when prompted. Voltage,
+Run the script and enter a capture duration when prompted. Voltage,
 current, and power appear in three live, independently-scaled plots.
+
+### Options
+
+| Option           | Default  | Description                          |
+|------------------|----------|--------------------------------------|
+| `-p`, `--port`   | `COM10`  | Serial port to connect to            |
+| `-b`, `--baud`   | `115200` | Baud rate                            |
+| `-l`, `--list`   | —        | List available serial ports and exit |
+
+If you're not sure which port your board is on, list the available ports
+first:
+
+```bash
+python data_log.py --list
+```
+
+The defaults can also be changed at the top of `data_log.py` (`SERIAL_PORT`,
+`BAUD_RATE`).
 
 ## Files
 
